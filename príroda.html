@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slovenská Príroda | Digitálny Sprievodca</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --forest: #1b4332;
+            --leaf: #2d6a4f;
+            --moss: #95d5b2;
+            --danger: #bc4749;
+            --warning: #ffb703;
+            --info: #219ebc;
+            --white: #ffffff;
+            --bg: #f4f7f4;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1589412225873-fb107ddbd79e?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 100px 20px;
+            border-bottom: 5px solid var(--moss);
+        }
+
+        h1 { font-family: 'Playfair Display', serif; font-size: 3.5rem; margin: 0; }
+
+        .nav-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--white);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--forest);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        button:hover { background: var(--leaf); transform: translateY(-2px); }
+
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+
+        .nature-card {
+            background: var(--white);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            display: none;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            background: var(--forest);
+            color: white;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .weather-display {
+            background: rgba(255,255,255,0.15);
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            text-align: right;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 40px;
+        }
+
+        .info-box {
+            padding: 25px;
+            border-radius: 20px;
+            background: #fff;
+            border: 1px solid #eee;
+            transition: 0.3s;
+        }
+
+        .info-box:hover { border-color: var(--moss); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+        .info-box h3 { margin-top: 0; color: var(--forest); font-size: 1.2rem; margin-bottom: 15px; }
+
+        .safety-alert {
+            grid-column: span 2;
+            background: #fffdf2;
+            border: 2px solid var(--warning);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .safety-alert { grid-column: span 1; }
+            .card-header { text-align: center; justify-content: center; }
+            .weather-display { text-align: center; width: 100%; }
+        }
+
+        .loader { text-align: center; display: none; padding: 50px; font-size: 1.2rem; color: var(--leaf); }
+        
+        .tag {
+            display: inline-block;
+            background: var(--moss);
+            color: var(--forest);
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <h1>Spoznaj Našu Prírodu</h1>
+        <p>Aktuálne dáta, bezpečnosť a tajomstvá slovenských hôr</p>
+    </div>
+
+    <div class="nav-container">
+        <button onclick="fetchData('tatry')">Vysoké Tatry</button>
+        <button onclick="fetchData('raj')">Slovenský raj</button>
+        <button onclick="fetchData('fatr')">Malá Fatra</button>
+        <button onclick="fetchData('poloniny')">Poloniny</button>
+    </div>
+
+    <div class="container">
+        <div id="loader" class="loader">🌲 Čítam mapy a kontrolujem vietor...</div>
+
+        <div id="card" class="nature-card">
+            <div class="card-header">
+                <div>
+                    <div class="tag">NÁRODNÝ PARK</div>
+                    <h2 id="m-nazov" style="margin:0; font-size: 2.5rem; font-family: 'Playfair Display', serif;"></h2>
+                    <p id="m-meta" style="margin: 10px 0 0 0; opacity: 0.9;"></p>
+                </div>
+                <div class="weather-display">
+                    <div id="m-temp" style="font-size: 2rem; font-weight: 700;"></div>
+                    <div id="m-wind" style="font-size: 0.9rem;"></div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="info-box safety-alert" id="safety-box">
+                    <div style="font-size: 2.5rem;">🛡️</div>
+                    <div>
+                        <h3>Bezpečnostné odporúčanie</h3>
+                        <p id="m-tip" style="margin:0; font-weight: 600;"></p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3>🦊 Život v divočine</h3>
+                    <p id="m-fauna"></p>
+                </div>
+
+                <div class="info-box">
+                    <h3>🌸 Botanika a pravidlá</h3>
+                    <p id="m-flora"></p>
+                </div>
+
+                <div class="info-box" style="border-left: 5px solid var(--danger);">
+                    <h3>🚫 Pozor na jedovaté rastliny</h3>
+                    <p id="m-jedovate" style="color: var(--danger); font-weight: 600;"></p>
+                </div>
+
+                <div class="info-box">
+                    <h3>📍 Čo navštíviť</h3>
+                    <p id="m-body"></p>
+                </div>
+
+                <div class="info-box">
+                    <h3>🐾 So štvornohým priateľom</h3>
+                    <p id="m-psy"></p>
+                </div>
+
+                <div class="info-box">
+                    <h3>🥾 Náročná turistika (bez psov)</h3>
+                    <p id="m-bezpsy"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fetchData(miesto) {
+            const card = document.getElementById('card');
+            const loader = document.getElementById('loader');
+            
+            card.style.display = 'none';
+            loader.style.display = 'block';
+
+            fetch(`/get_info?miesto=${miesto}`)
+                .then(response => response.json())
+                .then(data => {
+                    loader.style.display = 'none';
+                    card.style.display = 'block';
+
+                    // Základné info
+                    document.getElementById('m-nazov').innerText = data.nazov;
+                    document.getElementById('m-meta').innerText = `Rozloha: ${data.rozloha} | Najvyšší bod: ${data.vyska}`;
+                    
+                    // Počasie
+                    document.getElementById('m-temp').innerText = data.temp + "°C";
+                    document.getElementById('m-wind').innerText = `Vietor: ${data.wind} km/h`;
+                    
+                    // Bezpečnostný tip (Python logika)
+                    document.getElementById('m-tip').innerText = data.tip;
+
+                    // Ostatné dáta
+                    document.getElementById('m-fauna').innerText = data.fauna;
+                    document.getElementById('m-flora').innerText = data.flora;
+                    document.getElementById('m-jedovate').innerText = data.jedovate;
+                    document.getElementById('m-body').innerText = data.body_zaujmu;
+                    document.getElementById('m-psy').innerText = data.trasy_psy;
+                    document.getElementById('m-bezpsy').innerText = data.trasy_bez;
+
+                    // Scroll na kartu
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                })
+                .catch(error => {
+                    loader.innerText = "⚠️ Server neodpovedá. Spusti app.py!";
+                });
+        }
+    </script>
+</body>
+</html>
